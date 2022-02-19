@@ -5,7 +5,7 @@
 # GitHub        - https://github.com/The-Repo-Club/
 # Author        - The-Repo-Club [wayne6324@gmail.com]
 # Start On      - Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On   - Fri 18 February 2022, 07:26:46 pm (GMT)
+# Modified On   - Sat 19 February 2022, 04:44:59 pm (GMT) 
 # -------------------------------------------------------------------------
 #
 #
@@ -390,47 +390,100 @@ templating_help() {
 }
 
 #=== FUNCTION =================================================================
+#        Name: list_types
+# Description: list the types to pass to the template creator
+#==============================================================================
+
+list_types() {
+  printf "language
+license"
+
+}
+
+#=== FUNCTION =================================================================
 #        Name: new_template
 # Description: create a new template for language or license
 #==============================================================================
 
 new_template() {
-  printf 'License name/alias (spaces will be removed) -- '
-  read -r ln
+  type="$(list_types |
+    FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i || echo '')"
 
-  [[ -z "$ln" ]] && (
-    error 'Cannot leave license name empty'
-    exit 7
-  )
+  if [[ "$type" == "license" ]]; then
+    printf 'License name/alias (spaces will be removed) -- '
+    read -r ln
 
-  ln="$LICENSE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
+    [[ -z "$ln" ]] && (
+      error 'Cannot leave license name empty'
+      exit 7
+    )
 
-  if [[ -f "$ln" ]]; then
-    printf 'This license already exists, do you want to overwrite it? [y/n] '
-    read -r yn
+    ln="$LICENSE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
 
-    [[ "$yn" != 'y' ]] && exit
+    if [[ -f "$ln" ]]; then
+      printf 'This license already exists, do you want to overwrite it? [y/n] '
+      read -r yn
+
+      [[ "$yn" != 'y' ]] && exit
+    fi
+
+    editor="${EDITOR:-}"
+
+    if [[ -z "$editor" ]]; then
+      printf 'Editor to open file in -- '
+      read -r editor
+    fi
+
+    [[ -z "$editor" ]] && (
+      error 'Cannot leave editor empty'
+      exit 8
+    )
+
+    depend "$(basename "$editor" | awk '{print $1}')"
+
+    set -x
+    $editor "$ln"
+    set +x
+
+    [[ -f "$ln" ]] && einfo "License '$(basename "$ln")' saved"
+  elif [[ "$type" == "language" ]]; then
+    printf 'Language name/alias (spaces will be removed) -- '
+    read -r ln
+
+    [[ -z "$ln" ]] && (
+      error 'Cannot leave language name empty'
+      exit 7
+    )
+
+    ln="$LANGUAGE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
+
+    if [[ -f "$ln" ]]; then
+      printf 'This language already exists, do you want to overwrite it? [y/n] '
+      read -r yn
+
+      [[ "$yn" != 'y' ]] && exit
+    fi
+
+    editor="${EDITOR:-}"
+
+    if [[ -z "$editor" ]]; then
+      printf 'Editor to open file in -- '
+      read -r editor
+    fi
+
+    [[ -z "$editor" ]] && (
+      error 'Cannot leave editor empty'
+      exit 8
+    )
+
+    depend "$(basename "$editor" | awk '{print $1}')"
+
+    set -x
+    $editor "$ln"
+    set +x
+
+    [[ -f "$ln" ]] && einfo "Language '$(basename "$ln")' saved"
   fi
-
-  editor="${EDITOR:-}"
-
-  if [[ -z "$editor" ]]; then
-    printf 'Editor to open file in -- '
-    read -r editor
-  fi
-
-  [[ -z "$editor" ]] && (
-    error 'Cannot leave editor empty'
-    exit 8
-  )
-
-  depend "$(basename "$editor" | awk '{print $1}')"
-
-  set -x
-  $editor "$ln"
-  set +x
-
-  [[ -f "$ln" ]] && einfo "License '$(basename "$ln")' saved"
 }
 
 #=== FUNCTION =================================================================
