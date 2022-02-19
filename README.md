@@ -39,11 +39,9 @@ AUR: [YAY](https://aur.archlinux.org/packages/proctl) just use `yay -S proctl`
 ## Manual
 
 ```bash
-git clone https://github.com/The-Repo-Club/proctl && cd proctl
-
-chmod a+rx proctl
-
-sudo install -Dm755 proctl /usr/local/bin
+git clone https://github.com/The-Repo-Club/proctl
+cd proctl
+sudo make install
 ```
 
 # Configuration
