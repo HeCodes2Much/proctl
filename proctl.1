@@ -3,30 +3,54 @@
 .SH NAME
 .PP
 proctl \[en] Github Project Manager
-.SH SYNOPSIS
-.PP
-\fI\,proctl --setcolors [numbers] --file [path/to/file] --source [path/to/file]\/\fR
 .SH DESCRIPTION
 .PP
 \f[B]proctl\f[R] is a tool that can manage, switch between templated licenses, and set languages.
 .SH GENERAL OPTIONS
 .TP
-\f[B]-h\f[R], \f[B]\--help\f[R]
-Display a friendly help message.
+\fB\-initialize\fR      \fB\-i\fR @project_name
+initialize a git repo for a project
 .TP
-\f[B]-v\f[R], \f[B]\--version\f[R]
-Display a friendly version message.
+\fB\-list\-licenses\fR   \fB\-l\fR
+list available licenses
 .TP
-\f[B]-c\f[R], \f[B]\--center\f[R]
-Display the information in the center of the terminal.
+\fB\-list\-languages\fR  \fB\-ll\fR
+list available languages
 .TP
-\f[B]-f\f[R], \f[B]\--file\f[R] path/to/file
-Set a file for the ascii header.
+\fB\-current\-license\fR \fB\-c\fR
+show current active project license
 .TP
-\f[B]-s\f[R], \f[B]\--source\f[R] path/to/file
-Set a source for the config to read from.
+\fB\-pick\-license\fR    \fB\-p\fR
+pick a license in a FZF menu
 .TP
-\f[B]-sc\f[R], \f[B]\--setcolors\f[R] 1 2 3 4 5 6 7 8 9
-Set the colors for the information posted.
+\fB\-pick\-language\fR   \fB\-pl\fR
+pick a language in a FZF menu
+.TP
+\fB\-preview\-license\fR \fB\-P\fR @license_name
+preview a license template
+.TP
+\fB\-remove\-license\fR  \fB\-r\fR
+remove all licenses from the current project
+.TP
+\fB\-search\-license\fR  \fB\-s\fR '<query | patten>'
+search for license
+.TP
+\fB\-template\-help\fR   \fB\-T\fR
+print help for templating
+.TP
+\fB\-new\-template\fR    \fB\-t\fR
+create a new license template
+.TP
+\fB\-delete\-license\fR  \fB\-R\fR @license_name ...
+delete a license from templates
+.TP
+\fB\-new\-config\fR      \fB\-C\fR
+create a default config overwriting current one
+.TP
+\fB\-check\-conflict\fR  \fB\-k\fR
+check if current licene(s) are conflicting
+.TP
+\fB\-help\fR            \fB\-h\fR
+show this helpful list of commands
 .SH AUTHORS
 The-Repo-Club.
