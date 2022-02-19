@@ -5,7 +5,7 @@
 # GitHub        - https://github.com/The-Repo-Club/
 # Author        - The-Repo-Club [wayne6324@gmail.com]
 # Start On      - Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On   - Sat 19 February 2022, 04:44:59 pm (GMT) 
+# Modified On   - Sat 19 February 2022, 04:44:59 pm (GMT)
 # -------------------------------------------------------------------------
 #
 #
@@ -557,6 +557,7 @@ main() {
     ;;
   -remove-license | -r) remove_license ;;
   -search-license | -s) search_license "$2" ;;
+  -search-language | -ss) search_language "$2" ;;
   -template-help | -T) templating_help ;;
   -new-template | -t) new_template ;;
   -delete-license | -R)
