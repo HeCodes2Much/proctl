@@ -75,7 +75,7 @@ usage() {
   echo " \$AUTHOR_WEBSITE       -- '$AUTHOR_WEBSITE'"
   echo " \$AUTHOR_GIT           -- '$AUTHOR_GIT'"
   echo " \$LICENSE_DIR          -- '$LICENSE_DIR'"
-  echo " \$LANGUAGE_DIR          -- '$LANGUAGE_DIR'"
+  echo " \$LANGUAGE_DIR         -- '$LANGUAGE_DIR'"
   echo ''
   echo " [ENV=VAL ...] $(basename "$0") <flag>"
   echo ''
@@ -211,13 +211,13 @@ get_license() {
   if [[ ! -f "$LICENSE_DIR"/"$user_license" ]]; then
     error "No license by the name of '$1'"
     list_licenses
-    error 'Use of of the above'
+    error 'Use one of the above'
 
     exit 5
   elif [[ -f ./LICENSE ]] || [[ -f ./UNLICENSE ]]; then
     info "Found license: $(show_license)"
 
-    printf '   Switch licenses? [y/n] '
+    printf '   Switch licenses? [y/N] '
     read -r yn
 
     [[ ! "$yn" = "y" ]] && exit
@@ -226,7 +226,11 @@ get_license() {
   l_name='LICENSE'
   [[ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ]] && l_name='UNLICENSE'
 
-  cp -fiL "$LICENSE_DIR"/"$user_license" "$l_name"
+  printf '   Last chance you can not go back from here? [y/N] '
+  read -r lc
+
+  [[ ! "$lc" = "y" ]] && exit
+  cp -rfL "$LICENSE_DIR"/"$user_license" "$l_name"
 
   sed -i "$l_name" \
     -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
@@ -247,29 +251,39 @@ get_license() {
 #==============================================================================
 
 get_language() {
+  printf 'Chose a name for the file (spaces will be removed) -- '
+  read -r l_name
+
+  [[ -z "$l_name" ]] && (
+    error 'Cannot leave file name empty'
+    exit 7
+  )
+
+  l_name="$(echo "$l_name" | tr -d ' ' | head -c250)"
+
   depend 'cp'
   check_valid_language "$1"
 
   user_language="$(echo "$1" | sed "$LANGUAGE_SED")"
 
   if [[ ! -f "$LANGUAGE_DIR"/"$user_language" ]]; then
-    error "No language by the name of '$1'"
+    error "No language by the name of '$user_language'"
     list_languages
-    error 'Use of of the above'
+    error 'Use one of the above'
 
     exit 5
-  elif [[ -f ./main ]]; then
-    info "Found main file"
-
-    printf '   Override main file? [y/n] '
+  elif [[ -f "$l_name" ]]; then
+    printf 'This file already exists, do you want to overwrite it? [y/N] '
     read -r yn
 
-    [[ ! "$yn" = "y" ]] && exit
+    [[ "$yn" != 'y' ]] && exit
   fi
+  printf '   Last chance you can not go back from here? [y/N] '
+  read -r lc
 
-  l_name='main'
+  [[ ! "$lc" = "y" ]] && exit
 
-  cp -fiL "$LANGUAGE_DIR"/"$user_language" "$l_name"
+  cp -rfL "$LANGUAGE_DIR"/"$user_language" "$l_name"
 
   sed -i "$l_name" \
     -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
@@ -279,7 +293,25 @@ get_language() {
     -e "s/{{AUTHOR_NAME}}/$(sed_escape "$AUTHOR_NAME")/g" \
     -e "s/{{AUTHOR_GIT}}/$(sed_escape "$AUTHOR_GIT")/g"
 
-  info "Current language now is set to $user_language"
+  editor="${EDITOR:-}"
+
+  if [[ -z "$editor" ]]; then
+    printf 'Editor to open file in -- '
+    read -r editor
+  fi
+
+  [[ -z "$editor" ]] && (
+    error 'Cannot leave editor empty'
+    exit 8
+  )
+
+  depend "$(basename "$editor" | awk '{print $1}')"
+
+  set -x
+  $editor "$l_name"
+  set +x
+
+  info "Current language for $l_name is now set to $user_language"
 }
 
 #=== FUNCTION =================================================================
@@ -421,7 +453,7 @@ new_template() {
     ln="$LICENSE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
 
     if [[ -f "$ln" ]]; then
-      printf 'This license already exists, do you want to overwrite it? [y/n] '
+      printf 'This license already exists, do you want to overwrite it? [y/N] '
       read -r yn
 
       [[ "$yn" != 'y' ]] && exit
@@ -458,7 +490,7 @@ new_template() {
     ln="$LANGUAGE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
 
     if [[ -f "$ln" ]]; then
-      printf 'This language already exists, do you want to overwrite it? [y/n] '
+      printf 'This language already exists, do you want to overwrite it? [y/N] '
       read -r yn
 
       [[ "$yn" != 'y' ]] && exit
@@ -503,7 +535,7 @@ delete_license() {
 
 new_config() {
   einfo "This will overwite your config, are you sure you want do do that?"
-  printf '   [y/n] '
+  printf '   [y/N] '
   read -r yn
 
   [[ "$yn" != 'y' ]] && exit
@@ -533,6 +565,12 @@ main() {
     # shellcheck disable=2088
     warn "'$LICENSE_DIR' does not exist. Creating it."
     mkdir -p "$LICENSE_DIR"
+  fi
+
+  if [[ ! -d "$LANGUAGE_DIR" ]]; then
+    # shellcheck disable=2088
+    warn "'$LANGUAGE_DIR' does not exist. Creating it."
+    mkdir -p "$LANGUAGE_DIR"
   fi
 
   [[ -z "$1" ]] && (
@@ -575,7 +613,7 @@ main() {
   -new-config | -C) new_config ;;
   -check-conflict | -k) check_license_conflict ;;
 
-  @*) check_valid_license "$1" && get_license "$1" ;;
+  @*) check_valid_license "$1" && check_valid_language "$1" && get_license "$1" ;;
   *) error "Flag $1 is not known." && usage && exit 2 ;;
   esac
 }
