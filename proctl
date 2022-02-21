@@ -5,7 +5,7 @@
 # GitHub        - https://github.com/The-Repo-Club/
 # Author        - The-Repo-Club [wayne6324@gmail.com]
 # Start On      - Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On   - Sat 19 February 2022, 04:44:59 pm (GMT)
+# Modified On   - Sun 20 February 2022, 01:13:49 pm (GMT) 
 # -------------------------------------------------------------------------
 #
 #
@@ -221,15 +221,15 @@ get_license() {
     read -r yn
 
     [[ ! "$yn" = "y" ]] && exit
+    printf '   Last chance you can not go back from here? [y/N] '
+    read -r lc
+
+    [[ ! "$lc" = "y" ]] && exit
   fi
 
   l_name='LICENSE'
   [[ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ]] && l_name='UNLICENSE'
 
-  printf '   Last chance you can not go back from here? [y/N] '
-  read -r lc
-
-  [[ ! "$lc" = "y" ]] && exit
   cp -rfL "$LICENSE_DIR"/"$user_license" "$l_name"
 
   sed -i "$l_name" \
@@ -277,11 +277,11 @@ get_language() {
     read -r yn
 
     [[ "$yn" != 'y' ]] && exit
-  fi
-  printf '   Last chance you can not go back from here? [y/N] '
-  read -r lc
+    printf '   Last chance you can not go back from here? [y/N] '
+    read -r lc
 
-  [[ ! "$lc" = "y" ]] && exit
+    [[ ! "$lc" = "y" ]] && exit
+  fi
 
   cp -rfL "$LANGUAGE_DIR"/"$user_language" "$l_name"
 
