@@ -5,7 +5,7 @@
 # GitHub        - https://github.com/The-Repo-Club/
 # Author        - The-Repo-Club [wayne6324@gmail.com]
 # Start On      - Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On   - Mon 21 February 2022, 04:13:30 pm (GMT) 
+# Modified On   - Mon 21 February 2022, 09:29:19 pm (GMT) 
 # -------------------------------------------------------------------------
 #
 #
@@ -324,7 +324,7 @@ get_language() {
   cp -rfL "$LANGUAGE_DIR"/"$user_language" "$l_name"
 
   sed -i "$l_name" \
-    -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
+    -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$l_name")")/g" \
     -e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g" \
     -e "s/{{CURRENT_DATE}}/$(sed_escape "$(date '+%a %d %B %Y, %I:%M:%S %P (%Z)')")/g" \
     -e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
