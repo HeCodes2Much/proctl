@@ -5,7 +5,7 @@
 # GitHub        - https://github.com/The-Repo-Club/
 # Author        - The-Repo-Club [wayne6324@gmail.com]
 # Start On      - Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On   - Sun 20 February 2022, 01:13:49 pm (GMT) 
+# Modified On   - Mon 21 February 2022, 04:13:30 pm (GMT) 
 # -------------------------------------------------------------------------
 #
 #
@@ -128,6 +128,44 @@ make_new_config() {
   } >"$HOME"/.config/license.conf
 
   #==============================================================================
+}
+
+#=== FUNCTION =================================================================
+#        Name: initialize_repo
+# Description: initialize a git repo
+#==============================================================================
+
+initialize_repo() {
+  depend 'git'
+  isGit=$(git -C . rev-parse 2>/dev/null; echo $?)
+  if [[ "$isGit" -eq "0" ]]; then
+    printf '   Do you want to reinitialize this git repo? [y/N] '
+    read -r yn
+    [[ ! "$yn" = "y" ]] && exit
+    git init
+    arrIN=(${@//\// })
+    if [[ "${arrIN[0]}" == "ssh" ]]; then
+      AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
+      remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
+      git remote add origin "${remote}"
+    else
+      remote="$AUTHOR_GIT${1}.git"
+      git remote add origin "${remote}"
+    fi
+    return
+  else
+    git init
+    arrIN=(${@//\// })
+    if [[ "${arrIN[0]}" == "ssh" ]]; then
+      AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
+      remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
+      remote add origin "${remote}"
+    else
+      remote="$AUTHOR_GIT${1}.git"
+      remote add origin "${remote}"
+    fi
+    return
+  fi
 }
 
 #=== FUNCTION =================================================================
@@ -583,7 +621,7 @@ main() {
   check_license_conflict
   case "$1" in
   -help | -h) usage ;;
-  -initialize | -i) initialize_repo ;;
+  -initialize | -i) initialize_repo "$2";;
   -list-licenses | -l) list_licenses ;;
   -list-languages | -ll) list_languages ;;
   -current-license | -c) einfo "$(show_license)" ;;
