@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
 # -*-coding:utf-8 -*-
 # -------------------------------------------------------------------------
-# Path          - usr/bin/pkmgr
-# GitHub        - https://github.com/The-Repo-Club/
-# Author        - The-Repo-Club [wayne6324@gmail.com]
-# Start On      - Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On   - Mon 21 February 2022, 09:29:19 pm (GMT) 
+# Path			- usr/bin/proctl
+# GitHub		- https://github.com/The-Repo-Club/
+# Author		- The-Repo-Club [wayne6324@gmail.com]
+# Start On		- Fri 18 February 2022, 07:26:28 pm (GMT)
+# Modified On	- Tue 22 February 2022, 09:58:45 pm (GMT) 
 # -------------------------------------------------------------------------
 #
 #
 # DEPENDS ON:
-#    general utilities: coreutils [head, awk, ...]
-#    license picker: fzf (optional)
-#    automatic config generation: git (optional)
-#    colours: ncurses (optional) [tput]
+#	general utilities: coreutils [head, awk, ...]
+#	license picker: fzf (optional)
+#	automatic config generation: git (optional)
+#	colours: ncurses (optional) [tput]
 
-set -e
 shopt -s expand_aliases
 
 VERSION='1.0.0'
@@ -24,18 +23,18 @@ VERSION='1.0.0'
 
 [[ -z "$HOME" ]] && HOME="$(eval echo '~')"
 
-depend() { command -v -- "$1" >/dev/null || (echo "FATAL: depend(): Dependency '$1' broken" 1>&2 && exit 11); }
+depend() { type -P -- "$1" >/dev/null || (echo "FATAL: depend(): Dependency '$1' broken" 1>&2 && exit 11); }
 
 # Colours (requires ncurses)
 
 if [[ "$PROCTL_COLOURS" != 0 ]]; then
-  depend 'tput'
+	depend 'tput'
 
-  RED=$(tput setaf 1)
-  GREEN=$(tput setaf 2)
-  YELLOW=$(tput setaf 3)
-  BRIGHT=$(tput bold)
-  RESET=$(tput sgr0)
+	RED=$(tput setaf 1)
+	GREEN=$(tput setaf 2)
+	YELLOW=$(tput setaf 3)
+	BRIGHT=$(tput bold)
+	RESET=$(tput sgr0)
 fi
 
 # Aliases
@@ -46,9 +45,11 @@ alias ffind='find -L'
 # Constants
 
 LICENSE_DIR="$HOME/.config/licenses"
+LICENSE_CONF="$HOME/.config/license.conf"
 LICENSE_SED='s/^@//'
 
 LANGUAGE_DIR="$HOME/.config/languages"
+LANGUAGE_CONF="$HOME/.config/languages.conf"
 LANGUAGE_SED='s/^@//'
 
 # Utility functions
@@ -58,604 +59,622 @@ warn() { printf " ${YELLOW}*${RESET} %s\n" "$1" 1>&2; }
 info() { printf " ${GREEN}*${RESET} %s\n" "$1"; }
 einfo() { printf " ${BRIGHT}*${RESET} %s\n" "$1"; }
 
-sed_escape() { echo "$1" | sed -e 's/[\/&]/\\&/g'; }
+sed_escape() { printf '%s\n' "${1//\\/\\\\}"; }
 
 # Functions
 
-list_licenses() { ffind "$LICENSE_DIR" -maxdepth 1 -type f -printf " ${BRIGHT}*${RESET} @%f\n"; }
+list_licenses() {
+	for File in "$LICENSE_DIR"/*; {
+		if [[ -f $File ]]; then
+			printf " $BRIGHT*$RESET @%s\n" "$(basename $File)"
+		fi
+	}
+}
 
-list_languages() { ffind "$LANGUAGE_DIR" -maxdepth 1 -type f -printf " ${BRIGHT}*${RESET} @%f\n"; }
+list_languages() {
+	for File in "$LANGUAGE_DIR"/*; {
+		if [[ -f $File ]]; then
+			printf " $BRIGHT*$RESET @%s\n" "$(basename $File)"
+		fi
+	}
+}
 
 usage() {
-  echo " Github Project Manager v$VERSION"
-  echo ' manage, switch between templated licenses, and set languages'
-  echo ''
-  echo " \$AUTHOR_NAME          -- '$AUTHOR_NAME'"
-  echo " \$AUTHOR_EMAIL         -- '$AUTHOR_EMAIL'"
-  echo " \$AUTHOR_WEBSITE       -- '$AUTHOR_WEBSITE'"
-  echo " \$AUTHOR_GIT           -- '$AUTHOR_GIT'"
-  echo " \$LICENSE_DIR          -- '$LICENSE_DIR'"
-  echo " \$LANGUAGE_DIR         -- '$LANGUAGE_DIR'"
-  echo ''
-  echo " [ENV=VAL ...] $(basename "$0") <flag>"
-  echo ''
-  echo '  -initialize      -i @project_name       initialize a git repo for a project'
-  echo '  -list-licenses   -l                     list available licenses'
-  echo '  -list-languages  -ll                    list available languages'
-  echo '  -current-license -c                     show current active project license'
-  echo '  -pick-license    -p                     pick a license in a FZF menu'
-  echo '  -pick-language   -pl                    pick a language in a FZF menu'
-  echo '  -preview-license -P @license_name       preview a license template'
-  echo '  -remove-license  -r                     remove all licenses from the current project'
-  echo "  -search-license  -s '<query | patten>'  search for license"
-  echo '  -template-help   -T                     print help for templating'
-  echo '  -new-template    -t                     create a new license template'
-  echo '  -delete-license  -R @license_name ...   delete a license from templates'
-  echo '  -new-config      -C                     create a default config overwriting current one'
-  echo '  -check-conflict  -k                     check if current licene(s) are conflicting'
-  echo ''
-  echo '  -help            -h                     show this helpful list of commands'
-  echo ''
-  echo " PROCTL_COLOURS=0|[1]                     turn colour on (1) or off (0)               [${PROCTL_COLOURS:-1}]"
+	read -d '' <<-EOF
+	Github Project Manager v$VERSION
+	manage, switch between templated licenses, and set languages
+
+	AUTHOR_NAME		-- '$AUTHOR_NAME'
+	AUTHOR_EMAIL	-- '$AUTHOR_EMAIL'
+	AUTHOR_WEBSITE	-- '$AUTHOR_WEBSITE'
+	AUTHOR_GIT		-- '$AUTHOR_GIT'
+	LICENSE_DIR		-- '$LICENSE_DIR'
+	LANGUAGE_DIR	-- '$LANGUAGE_DIR'
+
+	[ENV=VAL ...] $(basename "$0") <flag>
+
+	-initialize	   -i @project_name			initialize a git repo for a project
+	-list-licenses	 -l						list available licenses
+	-list-languages  -ll					list available languages
+	-current-license -c						show current active project license
+	-pick-license	 -p						pick a license in a FZF menu
+	-pick-language	 -pl					pick a language in a FZF menu
+	-preview-license -P @license_name		preview a license template
+	-remove-license  -r						remove all licenses from the current project
+	-search-license  -s '<query | patten>'	search for license
+	-template-help	 -T						print help for templating
+	-new-template	 -t						create a new license template
+	-delete-license  -R @license_name ...	delete a license from templates
+	-new-config	   -C						create a default config overwriting current one
+	-check-conflict  -k						check if current licene(s) are conflicting
+
+	-help			   -h					show this helpful list of commands
+
+	PROCTL_COLOURS=0|[1]						turn colour on (1) or off (0)			[${PROCTL_COLOURS:-1}]
+	EOF
+
+	printf '%s' "$REPLY"
 }
 
 #=== FUNCTION =================================================================
-#        Name: make_new_config
-# Description: make the users configs
+#	Name: make_new_config
+#	Description: make the users configs
 #==============================================================================
 
 make_new_config() {
-  mkdir -p "$HOME"/.config
+	mkdir -p "$HOME"/.config
 
-  #=== DEFAULT CONFIG ===========================================================
+	#=== DEFAULT CONFIG ===========================================================
 
-  {
-    echo '#!/usr/bin/env sh'
-    echo "export AUTHOR_NAME='$(git config user.name || echo "${USER}")'"
-    echo "export AUTHOR_EMAIL='$(git config user.email || echo "${USER}@gmail.com")'"
-    echo "export AUTHOR_WEBSITE='https://example.com/'"
-    echo "export AUTHOR_GIT='http://github.com/$(git config user.name || echo "${USER}")'"
-    echo "export LICENSE_DIR='$LICENSE_DIR'"
-  } >"$HOME"/.config/license.conf
+	read -d '' <<-EOF
+		#!/usr/bin/env sh
+		export AUTHOR_NAME='$(git config user.name || echo "${USER}")'
+		export AUTHOR_EMAIL='$(git config user.email || echo "${USER}@gmail.com")'
+		export AUTHOR_WEBSITE='https://example.com/'
+		export AUTHOR_GIT='http://github.com/$(git config user.name || echo "${USER}")'
+		export LICENSE_DIR='$LICENSE_DIR'
+	EOF
 
-  {
-    echo '#!/usr/bin/env sh'
-    echo "export AUTHOR_NAME='$(git config user.name || echo "${USER}")'"
-    echo "export AUTHOR_EMAIL='$(git config user.email || echo "${USER}@gmail.com")'"
-    echo "export AUTHOR_WEBSITE='https://example.com/'"
-    echo "export AUTHOR_GIT='http://github.com/$(git config user.name || echo "${USER}")'"
-    echo "export LANGUAGE_DIR='$LANGUAGE_DIR'"
-  } >"$HOME"/.config/license.conf
+	echo "$REPLY" >"$LICENSE_CONF"
 
-  #==============================================================================
+	read -d '' <<-EOF
+		#!/usr/bin/env sh
+		export AUTHOR_NAME='$(git config user.name || echo "${USER}")'
+		export AUTHOR_EMAIL='$(git config user.email || echo "${USER}@gmail.com")'
+		export AUTHOR_WEBSITE='https://example.com/'
+		export AUTHOR_GIT='http://github.com/$(git config user.name || echo "${USER}")'
+		export LANGUAGE_DIR='$LANGUAGE_DIR'
+	EOF
+
+	echo "$REPLY" >"$LANGUAGE_CONF"
+
+	#==============================================================================
 }
 
 #=== FUNCTION =================================================================
-#        Name: initialize_repo
-# Description: initialize a git repo
+#	Name: initialize_repo
+#	Description: initialize a git repo
 #==============================================================================
 
 initialize_repo() {
-  depend 'git'
-  isGit=$(git -C . rev-parse 2>/dev/null; echo $?)
-  if [[ "$isGit" -eq "0" ]]; then
-    printf '   Do you want to reinitialize this git repo? [y/N] '
-    read -r yn
-    [[ ! "$yn" = "y" ]] && exit
-    #git init
-    arrIN=(${@//\// })
-    if [[ "${arrIN[0]}" == "ssh" ]]; then
-      AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
-      AUTHOR_GIT_SSH=${AUTHOR_GIT_SSH/\//:}
-      remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
-      echo git remote add origin "${remote}"
-    else
-      remote="$AUTHOR_GIT${1}.git"
-      echo git remote add origin "${remote}"
-    fi
-    return
-  else
-    git init
-    arrIN=(${@//\// })
-    if [[ "${arrIN[0]}" == "ssh" ]]; then
-      AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
-      AUTHOR_GIT_SSH=${AUTHOR_GIT_SSH/\//:}
-      remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
-      echo git remote add origin "${remote}"
-    else
-      remote="$AUTHOR_GIT${1}.git"
-      echo git remote add origin "${remote}"
-    fi
-    return
-  fi
+	depend 'git'
+	isGit=$(git -C . rev-parse 2>/dev/null; echo $?)
+	if [[ "$isGit" -eq "0" ]]; then
+		read -p ' Do you want to reinitialize this git repo? [y/N] '
+		[[ $REPLY == y ]] || exit
+		git init
+		arrIN=(${@//\// })
+		if [[ "${arrIN[0]}" == "ssh" ]]; then
+			AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
+			AUTHOR_GIT_SSH=${AUTHOR_GIT_SSH/\//:}
+			remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
+			echo git remote add origin "${remote}"
+		else
+			remote="$AUTHOR_GIT${1}.git"
+			echo git remote add origin "${remote}"
+		fi
+		return
+	else
+		git init
+		arrIN=(${@//\// })
+		if [[ "${arrIN[0]}" == "ssh" ]]; then
+			AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
+			AUTHOR_GIT_SSH=${AUTHOR_GIT_SSH/\//:}
+			remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
+			echo git remote add origin "${remote}"
+		else
+			remote="$AUTHOR_GIT${1}.git"
+			echo git remote add origin "${remote}"
+		fi
+		return
+	fi
 }
 
 #=== FUNCTION =================================================================
-#        Name: check_valid_license
-# Description: check if valid license
+#	Name: check_valid_license
+#	Description: check if valid license
 #==============================================================================
 
 check_valid_license() {
-  lic="$(echo "$1" | sed "$LICENSE_SED")"
-  echo "$1" | grep -qi '^@' || (error "License '$lic' is not valid" && exit 9)
-  [[ ! -f "$LICENSE_DIR"/"$lic" ]] && (error "License '$lic' does not exist" && exit 10)
+	lic="$(echo "$1" | sed "$LICENSE_SED")"
+	echo "$1" | grep -qi '^@' || (error "License '$lic' is not valid" && exit 9)
+	[[ ! -f "$LICENSE_DIR"/"$lic" ]] && (error "License '$lic' does not exist" && exit 10)
 
-  return 0
+	return 0
 }
 
 #=== FUNCTION =================================================================
-#        Name: check_valid_language
-# Description: check if valid language
+#	Name: check_valid_language
+#	Description: check if valid language
 #==============================================================================
 
 check_valid_language() {
-  lang="$(echo "$1" | sed "$LANGUAGE_SED")"
-  echo "$1" | grep -qi '^@' || (error "Language '$lang' is not valid" && exit 9)
-  [[ ! -f "$LANGUAGE_DIR"/"$lang" ]] && (error "Language '$lang' does not exist" && exit 10)
+	lang="$(echo "$1" | sed "$LANGUAGE_SED")"
+	echo "$1" | grep -qi '^@' || (error "Language '$lang' is not valid" && exit 9)
+	[[ ! -f "$LANGUAGE_DIR"/"$lang" ]] && (error "Language '$lang' does not exist" && exit 10)
 
-  return 0
+	return 0
 }
 
 #=== FUNCTION =================================================================
-#        Name: show_license
-# Description: show the list of licenses
+#	Name: show_license
+#	Description: show the list of licenses
 #==============================================================================
 
 show_license() {
-  depend 'head'
+	depend 'head'
 
-  l_name='LICENSE'
-  [[ -f UNLICENSE ]] && l_name='UNLICENSE'
+	l_name='LICENSE'
+	[[ -f UNLICENSE ]] && l_name='UNLICENSE'
 
-  if [[ -f "$l_name" ]]; then
-    head -n1 "$l_name" | sed 's/^\s*//; s/\s*$//'
-  else
-    echo 'strong copyright (no license)'
-  fi
+	if [[ -f "$l_name" ]]; then
+		head -n1 "$l_name" | sed 's/^\s*//; s/\s*$//'
+	else
+		echo 'strong copyright (no license)'
+	fi
 }
 
 #=== FUNCTION =================================================================
-#        Name: check_license_conflict
-# Description: check for licenses conflict
+#	Name: check_license_conflict
+#	Description: check for licenses conflict
 #==============================================================================
 
 check_license_conflict() {
-  if [[ -f ./LICENSE ]] && [[ -f ./UNLICENSE ]]; then
-    error 'Licensing conflict: UNLICENSE and LICENSE both found'
+	if [[ -f ./LICENSE ]] && [[ -f ./UNLICENSE ]]; then
+		error 'Licensing conflict: UNLICENSE and LICENSE both found'
 
-    printf '   Do you either (1) Remove LICENSE or (2) Remove UNLICENSE? [1/2] '
-    read -r lr
+		printf '	Do you either (1) Remove LICENSE or (2) Remove UNLICENSE? [1/2] '
+		read -r lr
 
-    case "$lr" in
-    1) rm LICENSE ;;
-    2) rm UNLICENSE ;;
-    *) error "'$lr' is not an option" && exit 1 ;;
-    esac || (error 'Could not resolve licensing conflict' && exit 6)
-  fi
+		case "$lr" in
+			1) rm LICENSE ;;
+			2) rm UNLICENSE ;;
+			*) error "'$lr' is not an option" && exit 1 ;;
+		esac || (error 'Could not resolve licensing conflict' && exit 6)
+	fi
 }
 
 #=== FUNCTION =================================================================
-#        Name: get_license
-# Description: get the license of chose
-# Parameter 1: License to use.
+#	Name: get_license
+#	Description: get the license of chose
+#	Parameter 1: License to use.
 #==============================================================================
 
 get_license() {
-  depend 'cp'
-  check_valid_license "$1"
+	depend 'cp'
+	check_valid_license "$1"
 
-  check_license_conflict
+	check_license_conflict
 
-  user_license="$(echo "$1" | sed "$LICENSE_SED")"
+	user_license="$(echo "$1" | sed "$LICENSE_SED")"
 
-  if [[ ! -f "$LICENSE_DIR"/"$user_license" ]]; then
-    error "No license by the name of '$1'"
-    list_licenses
-    error 'Use one of the above'
+	if [[ ! -f "$LICENSE_DIR"/"$user_license" ]]; then
+		error "No license by the name of '$1'"
+		list_licenses
+		error 'Use one of the above'
 
-    exit 5
-  elif [[ -f ./LICENSE ]] || [[ -f ./UNLICENSE ]]; then
-    info "Found license: $(show_license)"
+		exit 5
+	elif [[ -f ./LICENSE ]] || [[ -f ./UNLICENSE ]]; then
+		info "Found license: $(show_license)"
 
-    printf '   Switch licenses? [y/N] '
-    read -r yn
+		read -p '	Switch licenses? [y/N] '
 
-    [[ ! "$yn" = "y" ]] && exit
-    printf '   Last chance you can not go back from here? [y/N] '
-    read -r lc
+		[[ $REPLY == y ]] || exit
 
-    [[ ! "$lc" = "y" ]] && exit
-  fi
+		read -p '	Last chance you can not go back from here? [y/N] '
 
-  l_name='LICENSE'
-  [[ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ]] && l_name='UNLICENSE'
+		[[ $REPLY == y ]] || exit
+	fi
 
-  cp -rfL "$LICENSE_DIR"/"$user_license" "$l_name"
+	l_name='LICENSE'
+	[[ "$(head -n1 "$LICENSE_DIR"/"$user_license")" = 'UNLICENSE' ]] && l_name='UNLICENSE'
 
-  sed -i "$l_name" \
-    -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
-    -e "s/{{CURRENT_YEAR}}/$(sed_escape "$(date '+%Y')")/g" \
-    -e "s/{{AUTHOR_NAME}}/$(sed_escape "$AUTHOR_NAME")/g" \
-    -e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
-    -e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g"
+	cp -rfL "$LICENSE_DIR"/"$user_license" "$l_name"
 
-  check_license_conflict
+	sed -i "$l_name" \
+		-e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
+		-e "s/{{CURRENT_YEAR}}/$(sed_escape "$(date '+%Y')")/g" \
+		-e "s/{{AUTHOR_NAME}}/$(sed_escape "$AUTHOR_NAME")/g" \
+		-e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
+		-e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g"
 
-  info "Current license now is set to $(show_license)"
+	check_license_conflict
+
+	info "Current license now is set to $(show_license)"
 }
 
 #=== FUNCTION =================================================================
-#        Name: get_language
-# Description: get the language of chose
-# Parameter 1: Language to use.
+#	Name: get_language
+#	Description: get the language of chose
+#	Parameter 1: Language to use.
 #==============================================================================
 
 get_language() {
-  printf 'Chose a name for the file (spaces will be removed) -- '
-  read -r l_name
+	printf 'Chose a name for the file (spaces will be removed) -- '
+	read -r l_name
 
-  [[ -z "$l_name" ]] && (
-    error 'Cannot leave file name empty'
-    exit 7
-  )
+	[[ -z "$l_name" ]] && (
+	error 'Cannot leave file name empty'
+	exit 7
+)
 
-  l_name="$(echo "$l_name" | tr -d ' ' | head -c250)"
+l_name="$(echo "$l_name" | tr -d ' ' | head -c250)"
 
-  depend 'cp'
-  check_valid_language "$1"
+depend 'cp'
+check_valid_language "$1"
 
-  user_language="$(echo "$1" | sed "$LANGUAGE_SED")"
+user_language="$(echo "$1" | sed "$LANGUAGE_SED")"
 
-  if [[ ! -f "$LANGUAGE_DIR"/"$user_language" ]]; then
-    error "No language by the name of '$user_language'"
-    list_languages
-    error 'Use one of the above'
+if [[ ! -f "$LANGUAGE_DIR"/"$user_language" ]]; then
+	error "No language by the name of '$user_language'"
+	list_languages
+	error 'Use one of the above'
 
-    exit 5
-  elif [[ -f "$l_name" ]]; then
-    printf 'This file already exists, do you want to overwrite it? [y/N] '
-    read -r yn
+	exit 5
+elif [[ -f "$l_name" ]]; then
+	printf 'This file already exists, do you want to overwrite it? [y/N] '
+	read -r yn
 
-    [[ "$yn" != 'y' ]] && exit
-    printf '   Last chance you can not go back from here? [y/N] '
-    read -r lc
+	[[ "$yn" != 'y' ]] && exit
+	printf '	Last chance you can not go back from here? [y/N] '
+	read -r lc
 
-    [[ ! "$lc" = "y" ]] && exit
-  fi
+	[[ ! "$lc" = "y" ]] && exit
+fi
 
-  cp -rfL "$LANGUAGE_DIR"/"$user_language" "$l_name"
+cp -rfL "$LANGUAGE_DIR"/"$user_language" "$l_name"
 
-  sed -i "$l_name" \
-    -e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$l_name")")/g" \
-    -e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g" \
-    -e "s/{{CURRENT_DATE}}/$(sed_escape "$(date '+%a %d %B %Y, %I:%M:%S %P (%Z)')")/g" \
-    -e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
-    -e "s/{{AUTHOR_NAME}}/$(sed_escape "$AUTHOR_NAME")/g" \
-    -e "s/{{AUTHOR_GIT}}/$(sed_escape "$AUTHOR_GIT")/g"
+sed -i "$l_name" \
+	-e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$l_name")")/g" \
+	-e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g" \
+	-e "s/{{CURRENT_DATE}}/$(sed_escape "$(date '+%a %d %B %Y, %I:%M:%S %P (%Z)')")/g" \
+	-e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
+	-e "s/{{AUTHOR_NAME}}/$(sed_escape "$AUTHOR_NAME")/g" \
+	-e "s/{{AUTHOR_GIT}}/$(sed_escape "$AUTHOR_GIT")/g"
 
-  editor="${EDITOR:-}"
+editor="${EDITOR:-}"
 
-  if [[ -z "$editor" ]]; then
-    printf 'Editor to open file in -- '
-    read -r editor
-  fi
+if [[ -z "$editor" ]]; then
+	printf 'Editor to open file in -- '
+	read -r editor
+fi
 
-  [[ -z "$editor" ]] && (
-    error 'Cannot leave editor empty'
-    exit 8
-  )
+[[ -z "$editor" ]] && (
+error 'Cannot leave editor empty'
+exit 8
+)
 
-  depend "$(basename "$editor" | awk '{print $1}')"
+depend "$(basename "$editor" | awk '{print $1}')"
 
-  set -x
-  $editor "$l_name"
-  set +x
+set -x
+$editor "$l_name"
+set +x
 
-  info "Current language for $l_name is now set to $user_language"
+info "Current language for $l_name is now set to $user_language"
 }
 
 #=== FUNCTION =================================================================
-#        Name: license_picker
-# Description: use the fuzzy finder to list out the current licenses
+#	Name: license_picker
+#	Description: use the fuzzy finder to list out the current licenses
 #==============================================================================
 
 license_picker() {
-  depend 'awk'
-  depend 'fzf'
+	depend 'awk'
+	depend 'fzf'
 
-  license="$(list_licenses |
-    awk '{ print $2 }' |
-    sed "$LICENSE_SED" |
-    FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i --preview "cat $LICENSE_DIR/{}" || echo '')"
+	license="$(list_licenses |
+		awk '{ print $2 }' |
+		sed "$LICENSE_SED" |
+		FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i --preview "cat $LICENSE_DIR/{}" || echo '')"
 
-  if [[ -z "$license" ]]; then
-    return
-  fi
+	if [[ -z "$license" ]]; then
+		return
+	fi
 
-  get_license "@$license"
+	get_license "@$license"
 }
 
 #=== FUNCTION =================================================================
-#        Name: language_picker
-# Description: use the fuzzy finder to list out the current languages
+#	Name: language_picker
+#	Description: use the fuzzy finder to list out the current languages
 #==============================================================================
 
 language_picker() {
-  depend 'awk'
-  depend 'fzf'
+	depend 'awk'
+	depend 'fzf'
 
-  language="$(list_languages |
-    awk '{ print $2 }' |
-    sed "$LANGUAGE_SED" |
-    FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i --preview "cat $LANGUAGE_DIR/{}" || echo '')"
+	language="$(list_languages |
+		awk '{ print $2 }' |
+		sed "$LANGUAGE_SED" |
+		FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i --preview "cat $LANGUAGE_DIR/{}" || echo '')"
 
-  if [[ -z "$language" ]]; then
-    return
-  fi
+	if [[ -z "$language" ]]; then
+		return
+	fi
 
-  get_language "@$language"
+	get_language "@$language"
 }
 
 #=== FUNCTION =================================================================
-#        Name: search_license
-# Description: search for a license
-# Parameter 1: License to search for.
+#	Name: search_license
+#	Description: search for a license
+#	Parameter 1: License to search for.
 #==============================================================================
 
 search_license() {
-  for lic in $(list_licenses | awk '{ print $2 }' | sed "$LICENSE_SED"); do
-    if echo "$lic $(head -n8 "$LICENSE_DIR"/"$lic")" | grep -iq "$1"; then
-      einfo "@$lic"
-    fi
-  done
+	for lic in $(list_licenses | awk '{ print $2 }' | sed "$LICENSE_SED"); do
+		if echo "$lic $(head -n8 "$LICENSE_DIR"/"$lic")" | grep -iq "$1"; then
+			einfo "@$lic"
+		fi
+	done
 }
 
 #=== FUNCTION =================================================================
-#        Name: search_language
-# Description: search for a language
-# Parameter 1: Language to search for.
+#	Name: search_language
+#	Description: search for a language
+#	Parameter 1: Language to search for.
 #==============================================================================
 
 search_language() {
-  for lang in $(list_languages | awk '{ print $2 }' | sed "$LANGUAGE_SED"); do
-    if echo "$lang $(head -n8 "$LANGUAGE_DIR"/"$lang")" | grep -iq "$1"; then
-      einfo "@$lang"
-    fi
-  done
+	for lang in $(list_languages | awk '{ print $2 }' | sed "$LANGUAGE_SED"); do
+		if echo "$lang $(head -n8 "$LANGUAGE_DIR"/"$lang")" | grep -iq "$1"; then
+			einfo "@$lang"
+		fi
+	done
 }
 
 #=== FUNCTION =================================================================
-#        Name: remove_license
-# Description: remove the UNLICENSE LICENSE files
+#	Name: remove_license
+#	Description: remove the UNLICENSE LICENSE files
 #==============================================================================
 
 remove_license() {
-  rm -f UNLICENSE LICENSE 2>/dev/null || true
-  info "Current license now is set to $(show_license)"
+	rm -f UNLICENSE LICENSE 2>/dev/null || true
+	info "Current license now is set to $(show_license)"
 }
 
 #=== FUNCTION =================================================================
-#        Name: templating_help
-# Description: get help with the current templating
+#	Name: templating_help
+#	Description: get help with the current templating
 #==============================================================================
 
 templating_help() {
-  {
-    echo 'Templating'
-    echo ''
-    echo 'To template a license you need to create a file named'
-    echo "the same like you want to refer to your license, let's say \`hello\` in this example"
-    echo "so now create a file called hello in '$LICENSE_DIR/hello'"
-    echo ''
-    echo 'Now you can make your license there, now onto templating'
-    echo ''
-    echo 'The templating "language" is pretty simple, all syntax goes in {{...}}'
-    echo 'So the variables are:'
-    echo '  * {{PROJECT_NAME}}      -- The current project name (basename of current directory)'
-    echo '  * {{CURRENT_YEAR}}      -- The current year'
-    echo "  * {{AUTHOR_NAME}}       -- The author's full name"
-    echo "  * {{AUTHOR_EMAIL}}      -- The author's email"
-    echo "  * {{AUTHOR_WEBSITE}}    -- The author's website"
-    echo ''
-    echo 'Example of a template: https://raw.githubusercontent.com/TruncatedDinosour/dotfiles-cleaned/gentoo/dotfiles/config/licenses/ArAr2'
-  } | lless
+	{
+		echo 'Templating'
+		echo ''
+		echo 'To template a license you need to create a file named'
+		echo "the same like you want to refer to your license, let's say \`hello\` in this example"
+		echo "so now create a file called hello in '$LICENSE_DIR/hello'"
+		echo ''
+		echo 'Now you can make your license there, now onto templating'
+		echo ''
+		echo 'The templating "language" is pretty simple, all syntax goes in {{...}}'
+		echo 'So the variables are:'
+		echo '	* {{PROJECT_NAME}}	-- The current project name (basename of current directory)'
+		echo '	* {{CURRENT_YEAR}}	-- The current year'
+		echo "	* {{AUTHOR_NAME}}	-- The author's full name"
+		echo "	* {{AUTHOR_EMAIL}}	-- The author's email"
+		echo "	* {{AUTHOR_WEBSITE}}	-- The author's website"
+		echo ''
+		echo 'Example of a template: https://raw.githubusercontent.com/TruncatedDinosour/dotfiles-cleaned/gentoo/dotfiles/config/licenses/ArAr2'
+	} | lless
 }
 
 #=== FUNCTION =================================================================
-#        Name: list_types
-# Description: list the types to pass to the template creator
+#	Name: list_types
+#	Description: list the types to pass to the template creator
 #==============================================================================
 
 list_types() {
-  printf "language
-license"
+	printf "language
+	license"
 
 }
 
 #=== FUNCTION =================================================================
-#        Name: new_template
-# Description: create a new template for language or license
+#	Name: new_template
+#	Description: create a new template for language or license
 #==============================================================================
 
 new_template() {
-  type="$(list_types |
-    FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i || echo '')"
+	type="$(list_types |
+		FZF_DEFAULT_OPTS='' fzf --layout=reverse --height=20 --no-mouse -i || echo '')"
 
-  if [[ "$type" == "license" ]]; then
-    printf 'License name/alias (spaces will be removed) -- '
-    read -r ln
+	if [[ "$type" == "license" ]]; then
+		printf 'License name/alias (spaces will be removed) -- '
+		read -r ln
 
-    [[ -z "$ln" ]] && (
-      error 'Cannot leave license name empty'
-      exit 7
-    )
+		[[ -z "$ln" ]] && (
+		error 'Cannot leave license name empty'
+		exit 7
+	)
 
-    ln="$LICENSE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
+	ln="$LICENSE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
 
-    if [[ -f "$ln" ]]; then
-      printf 'This license already exists, do you want to overwrite it? [y/N] '
-      read -r yn
+	if [[ -f "$ln" ]]; then
+		printf 'This license already exists, do you want to overwrite it? [y/N] '
+		read -r yn
 
-      [[ "$yn" != 'y' ]] && exit
-    fi
+		[[ "$yn" != 'y' ]] && exit
+	fi
 
-    editor="${EDITOR:-}"
+	editor="${EDITOR:-}"
 
-    if [[ -z "$editor" ]]; then
-      printf 'Editor to open file in -- '
-      read -r editor
-    fi
+	if [[ -z "$editor" ]]; then
+		printf 'Editor to open file in -- '
+		read -r editor
+	fi
 
-    [[ -z "$editor" ]] && (
-      error 'Cannot leave editor empty'
-      exit 8
-    )
+	[[ -z "$editor" ]] && (
+	error 'Cannot leave editor empty'
+	exit 8
+)
 
-    depend "$(basename "$editor" | awk '{print $1}')"
+depend "$(basename "$editor" | awk '{print $1}')"
 
-    set -x
-    $editor "$ln"
-    set +x
+set -x
+$editor "$ln"
+set +x
 
-    [[ -f "$ln" ]] && einfo "License '$(basename "$ln")' saved"
-  elif [[ "$type" == "language" ]]; then
-    printf 'Language name/alias (spaces will be removed) -- '
-    read -r ln
+[[ -f "$ln" ]] && einfo "License '$(basename "$ln")' saved"
+elif [[ "$type" == "language" ]]; then
+	printf 'Language name/alias (spaces will be removed) -- '
+	read -r ln
 
-    [[ -z "$ln" ]] && (
-      error 'Cannot leave language name empty'
-      exit 7
-    )
+	[[ -z "$ln" ]] && (
+	error 'Cannot leave language name empty'
+	exit 7
+)
 
-    ln="$LANGUAGE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
+ln="$LANGUAGE_DIR/$(echo "$ln" | tr -d ' ' | head -c250)"
 
-    if [[ -f "$ln" ]]; then
-      printf 'This language already exists, do you want to overwrite it? [y/N] '
-      read -r yn
+if [[ -f "$ln" ]]; then
+	printf 'This language already exists, do you want to overwrite it? [y/N] '
+	read -r yn
 
-      [[ "$yn" != 'y' ]] && exit
-    fi
+	[[ "$yn" != 'y' ]] && exit
+fi
 
-    editor="${EDITOR:-}"
+editor="${EDITOR:-}"
 
-    if [[ -z "$editor" ]]; then
-      printf 'Editor to open file in -- '
-      read -r editor
-    fi
+if [[ -z "$editor" ]]; then
+	printf 'Editor to open file in -- '
+	read -r editor
+fi
 
-    [[ -z "$editor" ]] && (
-      error 'Cannot leave editor empty'
-      exit 8
-    )
+[[ -z "$editor" ]] && (
+error 'Cannot leave editor empty'
+exit 8
+)
 
-    depend "$(basename "$editor" | awk '{print $1}')"
+depend "$(basename "$editor" | awk '{print $1}')"
 
-    set -x
-    $editor "$ln"
-    set +x
+set -x
+$editor "$ln"
+set +x
 
-    [[ -f "$ln" ]] && einfo "Language '$(basename "$ln")' saved"
-  fi
+[[ -f "$ln" ]] && einfo "Language '$(basename "$ln")' saved"
+	fi
 }
 
 #=== FUNCTION =================================================================
-#        Name: delete_license
-# Description: delete a license from the system
+#	Name: delete_license
+#	Description: delete a license from the system
 #==============================================================================
 
 delete_license() {
-  check_valid_license "$1"
-  rm -vi "$LICENSE_DIR"/"$(echo "$1" | sed "$LICENSE_SED")"
+	check_valid_license "$1"
+	rm -vi "$LICENSE_DIR"/"$(echo "$1" | sed "$LICENSE_SED")"
 }
 
 #=== FUNCTION =================================================================
-#        Name: new_config
-# Description: write a new config eeven if you already have one
+#	Name: new_config
+#	Description: write a new config eeven if you already have one
 #==============================================================================
 
 new_config() {
-  einfo "This will overwite your config, are you sure you want do do that?"
-  printf '   [y/N] '
-  read -r yn
+	einfo "This will overwite your config, are you sure you want do do that?"
+	printf '	[y/N] '
+	read -r yn
 
-  [[ "$yn" != 'y' ]] && exit
+	[[ "$yn" != 'y' ]] && exit
 
-  make_new_config
-  info 'New config made and saved'
+	make_new_config
+	info 'New config made and saved'
 }
 
 #=== FUNCTION =================================================================
-#        Name: main
-# Description: this is the main function for everything to work
+#	Name: main
+#	Description: this is the main function for everything to work
 #==============================================================================
 
 main() {
-  if [[ -f "$HOME/.config/license.conf" ]] || [[ -f "$HOME/.config/languages.conf" ]]; then
-    # shellcheck disable=1091
-    . "$HOME/.config/license.conf"
-    # shellcheck disable=1091
-    . "$HOME/.config/languages.conf"
-  else
-    warn 'No configuration file found. Creating it.'
-    make_new_config
-    exit 4
-  fi
+	if [[ -f "$LICENSE_CONF" ]] || [[ -f "$LANGUAGE_CONF" ]]; then
+		# shellcheck disable=1091
+		. "$LICENSE_CONF"
+		# shellcheck disable=1091
+		. "$LANGUAGE_CONF"
+	else
+		warn 'No configuration file found. Creating it.'
+		make_new_config
+		exit 4
+	fi
 
-  if [[ ! -d "$LICENSE_DIR" ]]; then
-    # shellcheck disable=2088
-    warn "'$LICENSE_DIR' does not exist. Creating it."
-    mkdir -p "$LICENSE_DIR"
-  fi
+	if [[ ! -d "$LICENSE_DIR" ]]; then
+		# shellcheck disable=2088
+		warn "'$LICENSE_DIR' does not exist. Creating it."
+		mkdir -p "$LICENSE_DIR"
+	fi
 
-  if [[ ! -d "$LANGUAGE_DIR" ]]; then
-    # shellcheck disable=2088
-    warn "'$LANGUAGE_DIR' does not exist. Creating it."
-    mkdir -p "$LANGUAGE_DIR"
-  fi
+	if [[ ! -d "$LANGUAGE_DIR" ]]; then
+		# shellcheck disable=2088
+		warn "'$LANGUAGE_DIR' does not exist. Creating it."
+		mkdir -p "$LANGUAGE_DIR"
+	fi
 
-  [[ -z "$1" ]] && (
-    usage
-    exit 1
-  )
+	if [[ -z "$1" ]]; then
+		usage
+		exit 1
+	fi
 
-  ffind "$LICENSE_DIR" -not -name . -not -path "$LICENSE_DIR" -prune -not -type f -exec rm -R {} +
+	ffind "$LICENSE_DIR" -not -name . -not -path "$LICENSE_DIR" -prune -not -type f -exec rm -R {} +
 
-  check_license_conflict
-  case "$1" in
-  -help | -h) usage ;;
-  -initialize | -i) initialize_repo "$2";;
-  -list-licenses | -l) list_licenses ;;
-  -list-languages | -ll) list_languages ;;
-  -current-license | -c) einfo "$(show_license)" ;;
-  -pick-license | -p) license_picker ;;
-  -pick-languages | -pl) language_picker ;;
-  -preview-license | -P)
-    check_valid_license "$2"
-    lless "$LICENSE_DIR"/"$(echo "$2" | sed "$LICENSE_SED")" 2>/dev/null || einfo "License $2 not found"
-    ;;
-  -remove-license | -r) remove_license ;;
-  -search-license | -s) search_license "$2" ;;
-  -search-language | -ss) search_language "$2" ;;
-  -template-help | -T) templating_help ;;
-  -new-template | -t) new_template ;;
-  -delete-license | -R)
-    tmp_l=0
+	check_license_conflict
+	case "$1" in
+		-help | -h) usage ;;
+		-initialize | -i) initialize_repo "$2";;
+		-list-licenses | -l) list_licenses ;;
+		-list-languages | -ll) list_languages ;;
+		-current-license | -c) einfo "$(show_license)" ;;
+		-pick-license | -p) license_picker ;;
+		-pick-languages | -pl) language_picker ;;
+		-preview-license | -P)
+			check_valid_license "$2"
+			lless "$LICENSE_DIR"/"$(echo "$2" | sed "$LICENSE_SED")" 2>/dev/null || einfo "License $2 not found"
+			;;
+		-remove-license | -r) remove_license ;;
+		-search-license | -s) search_license "$2" ;;
+		-search-language | -ss) search_language "$2" ;;
+		-template-help | -T) templating_help ;;
+		-new-template | -t) new_template ;;
+		-delete-license | -R)
+			tmp_l=0
 
-    for lic in "$@"; do
-      if [[ "$tmp_l" = 0 ]]; then
-        tmp_l=1
-        continue
-      fi
+			for lic in "$@"; do
+				if [[ "$tmp_l" = 0 ]]; then
+					tmp_l=1
+					continue
+				fi
 
-      delete_license "$lic"
-    done
-    ;;
-  -new-config | -C) new_config ;;
-  -check-conflict | -k) check_license_conflict ;;
+				delete_license "$lic"
+			done
+			;;
+		-new-config | -C) new_config ;;
+		-check-conflict | -k) check_license_conflict ;;
 
-  @*) check_valid_license "$1" && check_valid_language "$1" && get_license "$1" ;;
-  *) error "Flag $1 is not known." && usage && exit 2 ;;
-  esac
+		@*) check_valid_license "$1" && check_valid_language "$1" && get_license "$1" ;;
+		*) error "Flag $1 is not known." && usage && exit 2 ;;
+	esac
 }
 
 main "$@"
