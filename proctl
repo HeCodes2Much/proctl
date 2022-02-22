@@ -5,7 +5,7 @@
 # GitHub		- https://github.com/The-Repo-Club/
 # Author		- The-Repo-Club [wayne6324@gmail.com]
 # Start On		- Fri 18 February 2022, 07:26:28 pm (GMT)
-# Modified On	- Tue 22 February 2022, 10:49:20 pm (GMT) 
+# Modified On	- Tue 22 February 2022, 11:31:07 pm (GMT) 
 # -------------------------------------------------------------------------
 #
 #
@@ -66,7 +66,7 @@ sed_escape() { printf '%s\n' "${1//\\/\\\\}"; }
 list_licenses() {
 	for File in "$LICENSE_DIR"/*; {
 		if [[ -f $File ]]; then
-			printf " $BRIGHT*$RESET @%s\n" "$(basename $File)"
+			printf " $BRIGHT*$RESET @%s\n" "${File##*/}"
 		fi
 	}
 }
@@ -74,7 +74,7 @@ list_licenses() {
 list_languages() {
 	for File in "$LANGUAGE_DIR"/*; {
 		if [[ -f $File ]]; then
-			printf " $BRIGHT*$RESET @%s\n" "$(basename $File)"
+			printf " $BRIGHT*$RESET @%s\n" "${File##*/}"
 		fi
 	}
 }
@@ -84,35 +84,35 @@ usage() {
 	Github Project Manager v$VERSION
 	manage, switch between templated licenses, and set languages
 
-	AUTHOR_NAME		-- '$AUTHOR_NAME'
-	AUTHOR_EMAIL	-- '$AUTHOR_EMAIL'
-	AUTHOR_WEBSITE	-- '$AUTHOR_WEBSITE'
-	AUTHOR_GIT		-- '$AUTHOR_GIT'
-	LICENSE_DIR		-- '$LICENSE_DIR'
-	LANGUAGE_DIR	-- '$LANGUAGE_DIR'
+	AUTHOR_NAME     -- '$AUTHOR_NAME'
+	AUTHOR_EMAIL    -- '$AUTHOR_EMAIL'
+	AUTHOR_WEBSITE  -- '$AUTHOR_WEBSITE'
+	AUTHOR_GIT      -- '$AUTHOR_GIT'
+	LICENSE_DIR     -- '$LICENSE_DIR'
+	LANGUAGE_DIR    -- '$LANGUAGE_DIR'
 
-	[ENV=VAL ...] $(basename "$0") <flag>
+	[ENV=VAL ...] ${0##*/} <flag>
 
-	-initialize	   -i @project_name			initialize a git repo for a project
-	-list-licenses	 -l						list available licenses
-	-list-languages  -ll					list available languages
-	-current-license -c						show current active project license
-	-pick-license	 -p						pick a license in a FZF menu
-	-pick-language	 -pl					pick a language in a FZF menu
-	-preview-license -P @license_name		preview a license template
-	-remove-license  -r						remove all licenses from the current project
-	-search-license  -s '<query | patten>'	search for license
-	-template-help	 -T						print help for templating
-	-new-template	 -t						create a new license template
-	-delete-license  -R @license_name ...	delete a license from templates
-	-new-config	   -C						create a default config overwriting current one
-	-check-conflict  -k						check if current licene(s) are conflicting
+	-initialize      -i @project_name       initialize a git repo for a project
+	-list-licenses   -l                     list available licenses
+	-list-languages  -ll                    list available languages
+	-current-license -c                     show current active project license
+	-pick-license    -p                     pick a license in a FZF menu
+	-pick-language   -pl                    pick a language in a FZF menu
+	-preview-license -P @license_name       preview a license template
+	-remove-license  -r                     remove all licenses from the current project
+	-search-license  -s '<query | patten>'  search for license
+	-template-help   -T                     print help for templating
+	-new-template    -t                     create a new license template
+	-delete-license  -R @license_name ...   delete a license from templates
+	-new-config      -C                     create a default config overwriting current one
+	-check-conflict  -k                     check if current licene(s) are conflicting
 
-	-help			   -h					show this helpful list of commands
+	-help            -h                     show this helpful list of commands
 
-	PROCTL_COLOURS=0|[1]						turn colour on (1) or off (0)			[${PROCTL_COLOURS:-1}]
+	PROCTL_COLOURS=0|[1]                    turn colour on (1) or off (0) [${PROCTL_COLOURS:-1}]
 	EOF
-
+	echo "                                  this"
 	printf '%s' "$REPLY"
 }
 
@@ -124,7 +124,7 @@ usage() {
 make_new_config() {
 	mkdir -p "$HOME"/.config
 
-	#=== DEFAULT CONFIG ===========================================================
+#=== DEFAULT CONFIG ===========================================================
 
 	read -d '' <<-EOF
 	#!/usr/bin/env sh
@@ -148,7 +148,7 @@ make_new_config() {
 
 	echo "$REPLY" >"$LANGUAGE_CONF"
 
-	#==============================================================================
+#==============================================================================
 }
 
 #=== FUNCTION =================================================================
@@ -302,7 +302,7 @@ get_license() {
 	cp -rfL "$LICENSE_DIR"/"$user_license" "$l_name"
 
 	sed -i "$l_name" \
-		-e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$PWD")")/g" \
+		-e "s/{{PROJECT_NAME}}/$(sed_escape "${PWD/##*/}")/g" \
 		-e "s/{{CURRENT_YEAR}}/$(sed_escape "$(date '+%Y')")/g" \
 		-e "s/{{AUTHOR_NAME}}/$(sed_escape "$AUTHOR_NAME")/g" \
 		-e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
@@ -352,7 +352,7 @@ get_language() {
 	cp -rfL "$LANGUAGE_DIR"/"$user_language" "$l_name"
 
 	sed -i "$l_name" \
-		-e "s/{{PROJECT_NAME}}/$(sed_escape "$(basename "$l_name")")/g" \
+		-e "s/{{PROJECT_NAME}}/$(sed_escape "${l_name##*/}")/g" \
 		-e "s/{{AUTHOR_WEBSITE}}/$(sed_escape "$AUTHOR_WEBSITE")/g" \
 		-e "s/{{CURRENT_DATE}}/$(sed_escape "$(date '+%a %d %B %Y, %I:%M:%S %P (%Z)')")/g" \
 		-e "s/{{AUTHOR_EMAIL}}/$(sed_escape "$AUTHOR_EMAIL")/g" \
@@ -371,7 +371,7 @@ get_language() {
 		exit 8
 	fi
 
-	depend "$(basename "$editor")"
+	depend "${editor##*/}"
 
 	set -x
 	$editor "$l_name"
@@ -535,13 +535,13 @@ new_template() {
 			exit 8
 		fi
 
-		depend "$(basename "$editor" | awk '{print $1}')"
+		depend "${editor##*/}"
 
 		set -x
 		$editor "$ln"
 		set +x
 
-		[[ -f "$ln" ]] && einfo "License '$(basename "$ln")' saved"
+		[[ -f "$ln" ]] && einfo "License '${ln##*/}' saved"
 
 	elif [[ "$type" == "language" ]]; then
 		read -p 'Language name/alias (spaces will be removed) -- '
@@ -570,13 +570,13 @@ new_template() {
 			exit 8
 		fi
 
-		depend "$(basename "$editor" | awk '{print $1}')"
+		depend "${editor##*/}"
 
 		set -x
 		$editor "$ln"
 		set +x
 
-		[[ -f "$ln" ]] && einfo "Language '$(basename "$ln")' saved"
+		[[ -f "$ln" ]] && einfo "Language '${ln##*/}' saved"
 	fi
 }
 
