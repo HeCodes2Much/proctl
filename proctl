@@ -142,15 +142,16 @@ initialize_repo() {
     printf '   Do you want to reinitialize this git repo? [y/N] '
     read -r yn
     [[ ! "$yn" = "y" ]] && exit
-    git init
+    #git init
     arrIN=(${@//\// })
     if [[ "${arrIN[0]}" == "ssh" ]]; then
       AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
+      AUTHOR_GIT_SSH=${AUTHOR_GIT_SSH/\//:}
       remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
-      git remote add origin "${remote}"
+      echo git remote add origin "${remote}"
     else
       remote="$AUTHOR_GIT${1}.git"
-      git remote add origin "${remote}"
+      echo git remote add origin "${remote}"
     fi
     return
   else
@@ -158,11 +159,12 @@ initialize_repo() {
     arrIN=(${@//\// })
     if [[ "${arrIN[0]}" == "ssh" ]]; then
       AUTHOR_GIT_SSH=${AUTHOR_GIT/http[s]:\/\//git@}
+      AUTHOR_GIT_SSH=${AUTHOR_GIT_SSH/\//:}
       remote="$AUTHOR_GIT_SSH${arrIN[1]}.git"
-      remote add origin "${remote}"
+      echo git remote add origin "${remote}"
     else
       remote="$AUTHOR_GIT${1}.git"
-      remote add origin "${remote}"
+      echo git remote add origin "${remote}"
     fi
     return
   fi
