@@ -12,7 +12,7 @@
 #Created:
 #   Fri 18 February 2022, 07:26:28 PM [GMT+1]
 #Modified:
-#   Sun 25 August 2024, 10:32:50 PM [GMT+1]
+#   Sun 25 August 2024, 10:42:22 PM [GMT+1]
 #
 #Description:
 #   Control Github Projects
@@ -104,14 +104,15 @@ usage() {
 	[ENV=VAL ...] ${0##*/} <flag>
 
 	-initialize      -i @project_name       initialize a git repo for a project
-	-list-licenses   -l                     list available licenses
-	-list-languages  -ll                    list available languages
+	-list-licenses   -ll                    list available licenses
+	-list-languages  -lL                    list available languages
 	-current-license -c                     show current active project license
-	-pick-license    -p                     pick a license in a FZF menu
-	-pick-language   -pl                    pick a language in a FZF menu
+	-pick-license    -pl                    pick a license in a FZF menu
+	-pick-language   -pL                    pick a language in a FZF menu
 	-preview-license -P @license_name       preview a license template
 	-remove-license  -r                     remove all licenses from the current project
-	-search-license  -s '<query | patten>'  search for license
+	-search-license  -sl '<query | patten>' search for license
+    -search-language -sL '<query | patten>' search for language
 	-template-help   -T                     print help for templating
 	-new-template    -t                     create a new license template
 	-delete-license  -R @license_name ...   delete a license from templates
@@ -685,18 +686,18 @@ main() {
     case "$1" in
     -help | -h) usage ;;
     -initialize | -i) initialize_repo "$2" ;;
-    -list-licenses | -l) list_licenses ;;
-    -list-languages | -ll) list_languages ;;
+    -list-licenses | -ll) list_licenses ;;
+    -list-languages | -lL) list_languages ;;
     -current-license | -c) einfo "$(show_license)" ;;
-    -pick-license | -p) license_picker ;;
-    -pick-languages | -pl) language_picker ;;
+    -pick-license | -pl) license_picker ;;
+    -pick-languages | -pL) language_picker ;;
     -preview-license | -P)
         check_valid_license "$2"
         lless "$LICENSE_DIR"/"$(echo "$2" | sed "$LICENSE_SED")" 2>/dev/null || einfo "License $2 not found"
         ;;
     -remove-license | -r) remove_license ;;
-    -search-license | -s) search_license "$2" ;;
-    -search-language | -ss) search_language "$2" ;;
+    -search-license | -sl) search_license "$2" ;;
+    -search-language | -sL) search_language "$2" ;;
     -template-help | -T) templating_help ;;
     -new-template | -t) new_template ;;
     -delete-license | -R)
