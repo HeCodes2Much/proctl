@@ -4,13 +4,13 @@
 
 <p align='center'>
 	<img src='https://img.shields.io/badge/Maintained-Yes-green?colorA=434c5e&colorB=ff59f9&style=flat-square'>
-	<img src='https://img.shields.io/github/last-commit/The-Repo-Club/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
-	<img src='https://img.shields.io/github/repo-size/The-Repo-Club/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
-	<img src='https://img.shields.io/github/issues/The-Repo-Club/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
-	<img src='https://img.shields.io/github/stars/The-Repo-Club/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
-	<img src='https://img.shields.io/github/forks/The-Repo-Club/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
-	<img src="https://badges.pufler.dev/visits/The-Repo-Club/proctl?color=ff59f9&labelColor=434c5e&style=flat-square"/>
-	<img src='https://img.shields.io/github/commit-activity/m/The-Repo-Club/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
+	<img src='https://img.shields.io/github/last-commit/HeCodes2Much/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
+	<img src='https://img.shields.io/github/repo-size/HeCodes2Much/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
+	<img src='https://img.shields.io/github/issues/HeCodes2Much/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
+	<img src='https://img.shields.io/github/stars/HeCodes2Much/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
+	<img src='https://img.shields.io/github/forks/HeCodes2Much/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
+	<img src="https://badges.pufler.dev/visits/HeCodes2Much/proctl?color=ff59f9&labelColor=434c5e&style=flat-square"/>
+	<img src='https://img.shields.io/github/commit-activity/m/HeCodes2Much/proctl?colorA=434c5e&colorB=ff59f9&style=flat-square'>
 </p>
 
 # Dependencies
@@ -30,7 +30,7 @@
 
 Follow one of the 3 simple ways to install below.
 
-Download: [PKGBUILD](https://github.com/The-Repo-Club/ArchAUR/raw/main/proctl/PKGBUILD) and make with `makepkg -sfi`
+Download: [PKGBUILD](https://github.com/HeCodes2Much/ArchAUR/raw/main/proctl/PKGBUILD) and make with `makepkg -sfi`
 
 Install: [Custom Repo](https://arch.therepo.club/) then just use `pacman -S proctl`
 
@@ -39,7 +39,7 @@ AUR: [YAY](https://aur.archlinux.org/packages/proctl) just use `yay -S proctl`
 ## Manual
 
 ```bash
-git clone https://github.com/The-Repo-Club/proctl
+git clone https://github.com/HeCodes2Much/proctl
 cd proctl
 sudo make install
 ```

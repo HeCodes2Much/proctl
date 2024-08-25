@@ -1,5 +1,5 @@
-# repomenu version
-VERSION=2022.02.16
+# proctl version
+VERSION=2024.08.25
 
 # paths
 PREFIX=/usr
